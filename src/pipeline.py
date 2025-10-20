@@ -8,6 +8,7 @@ import os
 from openai import OpenAI
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from transformers import pipeline as hf_pipeline
 
 from . import heuristics
 
@@ -39,7 +40,6 @@ def load_user_profiles(file_path: str = USER_PROFILES_PATH) -> dict:
 
 
 # Transcription
-#model = whisper.load_model("base")
 model_cache_dir = os.path.join(PROJECT_ROOT, "whisper_cache")
 print(f"Whisper model cache set to: {model_cache_dir}")
 model = whisper.load_model("base", download_root=model_cache_dir)
@@ -51,50 +51,72 @@ def transcribe_audio(audio_path: str) -> str:
 
 
 
-# Topic Extraction
-kw_model = KeyBERT(model='all-MiniLM-L6-v2')
-
-def extract_topics(transcript: str, top_n: int = 5) -> list[str]:
-    """
-    Use keyBERT to find top 5 keywords/ phrases
-    """
-    keywords = kw_model.extract_keywords(transcript, keyphrase_ngram_range=(1,2), stop_words='english', top_n=top_n)
-    topics = [topic for topic, score in keywords]
-    return topics
 
 
-
-
-# Create Personality Trait Representation of the Topic Vector:
+# Extract Topics and get Vector Representation:
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-def get_topic_personality_vectors(topics: list[str]) -> list[float]:
+def get_topics_and_vectors(transcript: str):
+    """
+    This uses an LLM to extract the 5 main, high-level topics from the transcript,
+    and then score those 5 topics against the 5 personality traits.
+    """
+    prompt = f"""
+    You are a two stage analysis tool for the transcipt:
+    \"\"\"
+    {transcript}
+    \"\"\"
 
-    # Create the prompt
-    prompt = f" Given these five personality traits: [openness, conscientiousness, extraversion, agreeableness, neuroticism], analyse these coversation topics:\n{', '.join(topics)}. Rate (0.0 - 1.0) the association of each topic with each of the five personality traits. Return ONLY a valid JSON list of 5 floats, each corresponding to the score for that trait in the given order. Example for topics 'philosophy, art': [0.9, 0.2, 0.4, 0.3, 0.2]."
+    First, analyse the transcript and identify the 5 most important topics of themes. Do not just include simple keywords; find abstract concepts as well.
+
+    Second, based ONLY on those 5 topics you identified, analyse their association with with these 5 personality traits: [openness, conscientiousness, extraversion, agreeableness, neuroticism].
+
+    You MUST return ONLY a valid JSON object with two keys:
+    1. "topics": A list of 5 topic strings.
+    2. "topic_vectors": A list of 5 floats (0.0 - 1.0) representing the score for each personality trait in the given order.
+    """
 
     try:
-        response = client.chat.completions.create(model = "gpt-3.5-turbo-1106",
-                                                  response_format = {"type":"json_object"},
-                                                  messages = [{"role": "system", "content": "You are a helpful assistant that returns ONLy valid JSON."},
+        response = client.chat.completions.create(model = 'gpt-3.5-turbo-1106',
+                                                  response_format = {"type": "json_object"},
+                                                  messages = [{"role": "system", "content": "You are a helpful assistant that returns ONLY valid JSON."},
                                                               {"role": "user", "content": prompt}],
                                                   temperature = 0.1)
-        # Extract JSON from response
-        result_string = response.choices[0].message.content
-        result_list = json.loads(result_string)
+        
+        result_data = json.loads(response.choices[0].message.content)
 
-        # Validation
-        if isinstance(result_list, list) and len(result_list) == 5 and all(isinstance(x, (int, float)) for x in result_list):
-            print(f"LLM-generated topic vector: {result_list}.")
-            return result_list
+        if (isinstance(result_data, dict) and 
+            "topics" in result_data and "topic_vector" in result_data and
+            isinstance(result_data["topics"], list) and len(result_data["topics"]) == 5 and
+            isinstance(result_data["topic_vector"], list) and len(result_data["topic_vector"]) == 5):
+
+            print(f"LLM-generated topics: {result_data['topics']}")
+            print(f"LLM-generated vector: {result_data['topic_vector']}")
+            return result_data["topics"], result_data["topic_vector"]
         else:
-            print(f"Warning: LLM output: {result_string} invalid. Default vector returned.")
-            return [0.5, 0.5, 0.5, 0.5, 0.5]
+            print(f"Warning: LLM output invalid: {result_data}. Falling back to defaults.")
+            return ["blank topic"], [0.5] * 5
         
     except Exception as e:
-        print(f"Error calling OpenAI API: {e}. Default vector returned.")
-        return [0.5, 0.5, 0.5, 0.5, 0.5]
+        print(f"Error: {e}. Falling back to defaults.")
+        return ["blank topic"], [0.5] * 5
     
+
+
+# Mock function to handle OPENAI API quota exceeding
+def get_topics_and_vectors_mock(transcript: str):
+    """
+    Temporary mock function for testing when
+    running out of API calls...
+    """
+    print(" USING TEMPORARY HIGH-QUALITY MOCK DATA ")
+    mock_topics = ["Mars Colonisation Logistics", "Future of Humanity", "Civilisation and Risk", "Population Collapse", "Extending Consciousness"]
+    mock_vector = [0.9, 0.7, 0.3, 0.4, 0.6]
+
+    print(f"Mock topics: {mock_topics}")
+    print(f"MOck vector: {mock_vector}")
+
+    return mock_topics, mock_vector
 
 
 
@@ -123,20 +145,4 @@ def heuristic_compatibility_score(pers_vec_1: list[float], pers_vec_2: list[floa
     Scores two users compatibility given their personality vectors, and the topic vector.
     '''
 
-    # Calculate 'Birds of a feather' score
-    boaf_score = heuristics.birds_of_a_feather(pers_vec_1, pers_vec_2, topic_vec)
-
-    # Calculate 'Opposites attract' score
-    oa_score = heuristics.opposites_attract(pers_vec_1, pers_vec_2)
-
-    # Would calculate an "in sync" metric with more time
-
-    # Hueristic Combination
-    weights = {"Similarity": 0.6, "Complementary": 0.4}
-    final_score = (weights["Similarity"] * boaf_score["final_score"]) + (weights["Complementary"] * oa_score["final_score"])
-
-    explanation = (f"Final Compatibility Score: {final_score:.2f}."
-                   f"Similarity Score: {boaf_score["final_score"]:.2f} (weight: {weights["Similarity"]}) |"
-                   f"Complementary Score: {oa_score["final_score"]:.2f} (weight: {weights["Complementary"]}).")
-    
-    return {"match_score": final_score, "explanation": explanation}
+    return heuristics.calculate_heuristic_score(pers_vec_1, pers_vec_2, topic_vec)

@@ -53,7 +53,7 @@ async def summarise(request: schemas.TranscriptInput):
     Takes a transcript string and returns a list of 5 topics.
     """
     try:
-        topics = pipeline.extract_topics(request.text)
+        topics, _ = pipeline.get_topics_and_vectors_mock(request.text) # Used while the API calls are down
         return {"topics": topics}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Topic extraction failed: {str(e)}")
@@ -67,11 +67,8 @@ async def match(request: schemas.TranscriptInput):
     """
     try:
 
-        # Extract topics
-        topics = pipeline.extract_topics(request.text)
-
-        # Get topic vectors
-        topic_vec = pipeline.get_topic_personality_vectors(topics)
+        # Extract topic vectors
+        topics, topic_vec = pipeline.get_topics_and_vectors_mock(request.text) # Used while the API calls are down
 
         # Fuse vectors
         fused_vec_1 = pipeline.fuse_vectors(USER_1_VEC, topic_vec)
