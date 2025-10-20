@@ -4,15 +4,17 @@
 # Import Libraries
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from scipy.spatial.distance import euclidean
 
 
-# Cosine Similairty Helper Function
-def _cosine_sim(vec1, vec2) -> float:
+# Euclidean Distance Instead of Cosine Similarity
+def _scaled_euclidean_similarity(vec1, vec2) -> float:
     """
-    rescale cosine similarity from [-1,1] to [0,1]
+    Calculated the similarity based on Euclidean distance, scaled to [0,1]
     """
-    sim = cosine_similarity(np.array(vec1).reshape(1,-1), np.array(vec2).reshape(1,-1))[0][0]
-    return (sim + 1)/2
+    distance = euclidean(np.array(vec1), np.array(vec2))
+    similarity = 1 / (1 + distance)
+    return similarity
 
 
 # Explanable Scores for Each Personality Trait
@@ -48,7 +50,7 @@ def _score_agreeableness(p1_score, p2_score):
     Agreeableness is generally good for compatibility.
     """
     penalty = (1 - p1_score) * (1 - p2_score)
-    return (p1_score + p2_score) / 2 - (penalty * 0.5)
+    return max(0, min(1,(p1_score + p2_score) / 2 - (penalty * 0.25)))
 
 
 def _score_neuroticism(p1_score, p2_score):
@@ -57,11 +59,11 @@ def _score_neuroticism(p1_score, p2_score):
     """
     friction_score = 1 - ((p1_score + p2_score)/2)
     clash_penalty = p1_score * p2_score
-    return friction_score - (clash_penalty * 0.5)
+    return max(0, min(1, friction_score - (clash_penalty * 0.25)))
 
 
 
-def calculate_heuristic_score(pers_vec_1: list[float], pers_vec_2: list[float], topic_vec: list[float]) -> dict:
+def calculate_heuristic_score(pers_vec_1: list[float], pers_vec_2: list[float], analysis_results: dict) -> dict:
 
     # How compatible people are based on individual personality trait heuristics
     scores = {"openness": _score_openness(pers_vec_1[0], pers_vec_2[0]),
@@ -70,27 +72,37 @@ def calculate_heuristic_score(pers_vec_1: list[float], pers_vec_2: list[float], 
               "agreeableness": _score_agreeableness(pers_vec_1[3], pers_vec_2[3]),
               "neuroticism": _score_neuroticism(pers_vec_1[4], pers_vec_2[4])}
     
-    # How compatible people are based on topic interest similarity
-    interest_1 = _cosine_sim(pers_vec_1, topic_vec)
-    interest_2 = _cosine_sim(pers_vec_2, topic_vec)
-    scores["topic_interest"] = min(interest_1, interest_2)
+    topic_vec = analysis_results["topic_vector"]
+    engagement_score = analysis_results["engagement_score"]
 
-    # Good to implement some social bonus based on conversational tone next.
+    # How interested is the least intersted person in the conversation.
+    interest_1 = _scaled_euclidean_similarity(pers_vec_1, topic_vec)
+    interest_2 = _scaled_euclidean_similarity(pers_vec_2, topic_vec)
+    min_interest = min(interest_1, interest_2)
+
+    # Scale the Topic Interest Vector to a Wider Range of Value (Necessary due to min)
+    mu = 0.4
+    stretch_factor = 1.8
+    vec_interest = np.clip(mu + stretch_factor*(min_interest - mu), 0.0, 1.0)
+
+    # Implement Score for Engagement of Participants as a proxy for interest in the topic
+    engagenent_adjustment = (engagement_score - 0.5) * 0.2
+    scores["topic_interest"] = np.clip(vec_interest + engagenent_adjustment, 0.0, 1.0)
 
     # How important are different personality traits and topic contexual personality
-    weights = {"openness": 0.1,
+    weights = {"openness": 0.13,
                "conscientiousness": 0.15,
-               "extraversion": 0.1,
+               "extraversion": 0.12,
                "agreeableness": 0.25,
-               "neuroticism": 0.25,
-               "topic_interest": 0.15}
+               "neuroticism": 0.15,
+               "topic_interest": 0.20}
     
     final_score = sum(scores[key] * weights[key] for key in weights)
 
     explanation = (f"Final Score: {final_score:.2f}." 
                    f"Key Drivers: Stability ({scores['neuroticism']:.2f}) and agreeableness ({scores['agreeableness']:.2f})")
     
-    return {"match_score": final_score, "explanation": explanation}
+    return {"match_score": final_score, "explanation": explanation, "breakdown": scores}
 
 
 

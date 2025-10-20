@@ -6,4 +6,5 @@ whisper-openai
 keybert
 scikit-learn
 numpy
+scipy
 transformers

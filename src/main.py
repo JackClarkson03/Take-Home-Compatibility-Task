@@ -53,7 +53,7 @@ async def summarise(request: schemas.TranscriptInput):
     Takes a transcript string and returns a list of 5 topics.
     """
     try:
-        topics, _ = pipeline.get_topics_and_vectors_mock(request.text) # Used while the API calls are down
+        topics, _, _ = pipeline.get_topics_and_vectors(request.text) # Use get_topics_and_vectors_mock() while the API calls are down
         return {"topics": topics}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Topic extraction failed: {str(e)}")
@@ -68,7 +68,7 @@ async def match(request: schemas.TranscriptInput):
     try:
 
         # Extract topic vectors
-        topics, topic_vec = pipeline.get_topics_and_vectors_mock(request.text) # Used while the API calls are down
+        topics, topic_vec, engagement_score = pipeline.get_topics_and_vectors(request.text) # Use get_topics_and_vectors_mock() while the API calls are down
 
         # Fuse vectors
         fused_vec_1 = pipeline.fuse_vectors(USER_1_VEC, topic_vec)
@@ -78,7 +78,8 @@ async def match(request: schemas.TranscriptInput):
         baseline = heuristics.baseline_compatibility_score(fused_vec_1, fused_vec_2)
 
         # Calculate heuristic score
-        heuristic = pipeline.heuristic_compatibility_score(USER_1_VEC, USER_2_VEC, topic_vec)
+        analysis_results = {"topic_vector":topic_vec, "engagement_score": engagement_score}
+        heuristic = pipeline.heuristic_compatibility_score(USER_1_VEC, USER_2_VEC, analysis_results)
 
         return {"baseline_score": baseline,
                 "heuristic_score": heuristic}
