@@ -2,7 +2,7 @@
 The goal of this project is to build a mini-pipeline for compatibility scoring based on conversation audio and psychometrics. With the focus being on clear thinking, trade-offs and testable endpoints, the pipeline is relatively simple, with the focus being on justificaiton of choices, and the writeup.
 
 ## Live Demo and Usage
-** Input information about how to run the project
+** Input information about how to run the project. What is the folder structure and what does each file do?
 
 ## Architecture & Design Decisions
 This section justifies all architectural decision made about the pipeline. The first few steps are consistent for both the baseline compatibility model, and the matching heuristic model:
@@ -17,6 +17,16 @@ The baseline compatibility score fuses the topic and personality information dif
 <img width="2427" height="674" alt="baseline_model" src="https://github.com/user-attachments/assets/113a895f-0fdc-45dd-83e8-f10a777d5d72" />
 
 - The main decision require in this pipeline is in the choice of weights in the weighted sum of participant personality vectors and topic personality vectors. For this I chose to weight 70% towards the personality vector, and 30% towards the topic. This is due to the interpretation of the topic personality vector. The "personality traits" of a topic may impact peoples behaviour slightly, but they do not fundamentally change who they are. This weighting seems appropriate to capture the fact that in the 5-dimensional space representing the personality of the topic and participants, the nature of the topic slightly modifies a persons contexual personality, but their overall personality vector must remain the main source of thier nature.
+- ** State the problem with the baseline model
+
+
+The Heuristic compatibility score works to resolve this problem, and gives a more naunced scoring system.
+
+- ** Explain how it works
+- ** Create pipeline diagram
+- ** Discuss what weighting decisions need to be made (in config) and explain the decisions made.
+
+  - Another weighting decision to be made is about the weighting between the psychometrics and audio compatibility scores in the overall heuristic compatibility score. My model allows you to encode your prior belief about whether psychometrics or the audio conversation is more important for determining compatibility, as well as allowing you to increase the weighting in favour of the audio compatibilty scores for longer audio transcripts. This works by assuming a linear relationship between the word count and maximum possible bonus, and letting the user pick values for these. **what should I pick for the prior belief? For the audio transcript length bonus, I chose to add up to a 20% favouring of the audio compatibility score weight, and to have this maximum percentage achieved for transcripts with 1500 or more words. I chose this because it equates to roughly 10 minutes of audio. ** Is this a good choice? This means the compatibility scores for longer conversations will be determined more by the metrics relating to the audio transcript, than avergae, and the opposite for shorter conversations, the idea being that you can gauge more about compatibility based on a longer conversation. **add a diagram?
 
 
 
@@ -24,7 +34,7 @@ The baseline compatibility score fuses the topic and personality information dif
 
 
 ## Project Approach
-My goal for this project is to build an end-to-end pipeline which produces a live, testable demo, in an intelligent and thoughtful way. Due to the tight time constraints of the project, I will first create a working pipeline, and then continue making improvements. After each model iteration, I will test each section on using the interaction demo, and use these results to determine what is included in the next iteration of the model. The full, detailed modifications of each iteration are explained below.
+This section details my approach to the project. My goal was to build an end-to-end pipeline which produces a live, testable demo, in an intelligent and thoughtful way. Due to the tight time constraint of the project, and my unfamiliarity with Fast API and Swagger UI, my approach was to first create a working pipeline, and then continue to make improvements. After each model iteration, I tested each section using the interactive demo, and used these results, as well as critical thinking about the way my model processed information, to determine what to adjust for the next iteration of the model. The full, detailed modifications of each iteration are explained below. ** These sections need checking over.
 
 <details>
   <summary> First Model Iteration: Working Iteration using Whispter, keyBERT, LLMs, and Three-Stage Heuristic Approach</summary>
@@ -112,6 +122,21 @@ The Fourth iteration added a few small, but important changes to improve the ove
 
 Overall, no major changes were added, but the quality of life when running the code has greatly improved, which is equally as important as changing the actual model.
 </details>
+
+<details>
+  <summary>Fifth Model Iteration: Dynamic Psychometric-vs.-Audio Weightings Based on Length of Transcript</summary>
+
+  The fifth iteration adds a more dynamic and tunable approach to the weighting of psychometric-based compatibility, and audio-based compatibility. My heuristic method has two main metrics of compatability, which are averaged together using a weighted sum. These two approaches are psychometric-based (i.e. how do the two participants personality vectors indicate compatibility?), and audio-based (i.e. how does information from the audio transcript and a participants personality vector indicate compatibility?). Previous iterations of the model set a fixed weighting of 80% in favour of the psychometric-based approach, and 20% in favour of the topic-based approach. This seemed flawed to me: transcripts from a long conversation should be taken as a more meaningful representation of people compatibility compared to shorter ones. These long conversations have more information available, and should be weighted as such. My solution was to implement a piecewise linear curve to the weighint function. This curve calculates the bonus to the audio-based compatibility score based on the word count of the transcript.
+</details>
+
+
+
+## Model Limitations & Trade-offs
+** Discuss explicit trade-offs in detail.
+
+## Future Steps
+** How I would approach this differently in a deployment setting? What the next steps I would take are in developing a similar model full time.
+
 
 
 
