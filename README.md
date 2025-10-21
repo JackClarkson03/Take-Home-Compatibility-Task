@@ -1,6 +1,7 @@
 # Take-Home-Compatibility-Task
 The goal of this project is to build a mini-pipeline for compatibility scoring based on conversation audio and psychometrics. With the focus being on clear thinking, trade-offs and testable endpoints, the pipeline is relatively simple, with the focus being on justificaiton of choices, and the writeup.
 
+
 ## Live Demo and Usage
 ** Input information about how to run the project. What is the folder structure and what does each file do?
 
@@ -30,6 +31,27 @@ Live URL - I made many attempts at getting the live demo link to work for my mod
 - From this site, you press "Try it out" in the /transcribe section and then upload the .wav file and press "Execute" to transcribe the audio, and then "try it out", and replace the "string" text with this transcribed audio in the /summarise and /match sections to get the topic vectors and compatability scores.
 
 
+You can also run the unit and API tests in the following way:
+
+ - Navigate into the project directory.
+ - Run the command (either):
+
+   - $env:OPENAI_API_KEY="this is where you insert your api key" (for powershell)
+   - export OPENAI_API_KEY="this is where you insert your api key" (for linux)
+
+  - And then the commands (both):
+
+    - $env:PYTHONPATH = "$env:PYTHONPATH;."
+    - pytest
+   
+  The project is organised into several key Python files within the src/ directory:
+
+  - main.py: This defines the FastAPI application, exposes the API endpoints, and handles user requrests.
+  - pipeline.py: This contains the core logic, including functions for audio trascription, calling the LLM, and running VADER sentiment analysis.
+  - heuristics.py: This implements the custom compatability scoring logic, and also contains the baseline scoring function. This is where the projects "philosophy" of compatability is translated into code.
+  - config.py: This is a centralised file for all model parameters and weights. It allows for easy tuning of the heuristic score based on personal beliefs.
+  - schemas.py: This defines the Pydantic data models used for API request and reponse validation.
+
 ## Architecture & Design Decisions
 This section justifies all architectural decision made about the pipeline. The first few steps are consistent for both the baseline compatibility model, and the matching heuristic model:
 
@@ -48,13 +70,13 @@ The baseline compatibility score fuses the topic and personality information dif
 
 The Heuristic compatibility score works to resolve this problem, and gives a more naunced scoring system.
 
-- ** Explain how it works
+- ** Explain how it works ............ It uses a combination of audio-based and psychometric-based scoring systems.
 - ** Create pipeline diagram
-- There are several weighting parameters in config.py, each with an explainable meaning which allows for the incorporation of beliefs about the importance of different types of compatability. My approach to adjusting the final weights was to more clearly set out a definition of "compatability" in my head, write unit tests to check whether the model encorporated these beliefs, and then tweak the weights and the individual personality trait score functions accordingly until the model passes the test. This "compatability" definition is hard to atriculate, but I believe that ... (mention causual conversation compatability is the metric)...
+- There are several weighting parameters in config.py, each with an explainable meaning which allows for the incorporation of beliefs about the importance of different types of compatability. My approach to adjusting the final weights was to more clearly set out a definition of "compatability" in my head, write unit tests to check whether the model encorporated these beliefs, and then tweak the weights and the individual personality trait score functions accordingly until the model passes the test. General "compatability" is hard to define, but in the interest of narrowing the scope, and due to the nature of the conversation data given for this project, I will aim to define casual conversation compatability. That is, the potential for participants to achieve conversational flow, characterised by mutual ease, positive emotional tenor and sustained engagement. With relation to the personality traits provided, this can be summed up as follows.
 
  - Openness is generally positive for compatibility. A pair where both are high in openness is better than a pair where both are low in openness, but similar openness is better than a mixture. This is because shared curiosity or shared preference for routine leads to smoother conversatins, but high openness allows for an interest in a wider range of topics.
  - Similairty in conscinetiousness is positive, but less critical than other traits. Very high differences can cause friction, but moderate differences are usually compatible for friendly conversation.
- - Complementary is extraversion is positive. Two extreme extraverts are moderately compatible but there may be competition for speaking time. Pairs of introverts are least compatible due to difficulty in initiating and maintaining a conversation.
+ - Complementary is extraversion is positive. Two extreme extraverts are moderately compatible but there may be competition for speaking time. Pairs of introverts are least compatible due to difficulty in initiating and maintaining a conversation. Ambiverts should have neutral compatibility.
  - Agreeableness is a positive trait for casual conversation and is a strong predictor of compatability. Pairs where both are high on agreeableness are most compatable, followed by a mixture of agreeableness.
  - Neuroticism is a negative trait that inversely predicts compatability. Pairs where both are high are least compatabile due to potential for negativity spirals.
  - For trait importance, agreeableness and low neuroticism are the most important traits, followed by complementary extraversion, with openess and conscientiousness ranking least important. This is because a conversations pleasantness and flow are heavily influenced by how cooperative and emotionally stable the participatns are. Having a balance of talking and listening helps maintain engagement, and shared curiosity or conscientiousness are generally not as important.
@@ -66,11 +88,10 @@ The Heuristic compatibility score works to resolve this problem, and gives a mor
 
 To encode this, I wrote unit tests which measured some of these beliefs (others make more sense to directly set). For different beliefs about compatability, or a different type of compatability being measure, similar unit tests could be deployed to allow these assumptions to be tested. The organisation of my model (unit tests in test_heuristics.py and weights in config.py) helps people encode their personal assumptions about compatability using the method of adjusting the unit tests to reflect their views, and then adjusting the model weights to pass these tests. For example, if the deployment task is to find romantic compatability, consciensiousness might rank higher since organised people will value that more in a partner, but not find it necessary in a casual conversation. Similarly, weights and score functions can be adjusted for your own personal preference if trying to find someone you're compatible with. For my specific assumptions, the final weightings were used to pass the tests:
 
-  - The **individual personality score weightings** are as follows: Openness:..., Conscienciousness:..., Extraversion:..., Agreeableness:..., 
-  - The **weighting of importance of different personality traits**
-  - The **weightings of different audio-based metrics (topic interest, social cue (LLM) bonus, and vader sentiment bonuse)**
-  This works by assuming a linear relationship between the word count and maximum possible bonus, and letting the user pick values for these. **what should I pick for the prior belief?
-  - For the **audio transcript length bonus**, I chose to add up to a 20% favouring of the audio compatibility score weight, and to have this maximum percentage achieved for transcripts with 1500 or more words. I chose this because it equates to roughly 10 minutes of audio. ** Is this long enough? This means the compatibility scores for longer conversations will be determined more by the metrics relating to the audio transcript, than avergae, and the opposite for shorter conversations, the idea being that you can gauge more about compatibility based on a longer conversation. **add a diagram?
+  - The **individual personality score weightings** are as follows: Openness:0.13, Conscienciousness:0.13, Extraversion:0.17, Agreeableness:0.34, Neuroticism:0.22. The function used to calculate each personality trait score can be found in heuristics.py.
+  - The **weighting of audio-based vs psychometric-based** metrics was tuned to favour psychometric 100% during testing of the personality vector to ensure the topic vector does not impact the compatability scores. After the weights of the personality traits were determined, the personality-based metrics were tuned to contribute to to 70% of the overall compatability score to reflect my belief.
+  - The **weightings of different audio-based metrics (topic interest, social cue (LLM) bonus, and VADER sentiment bonuse)** were set to 0.45 for the LLM bonus, and 0.1 for the VADER sentiment bonus to reflect the belief in the importance of the engagement of the participants in the conversation in determining compatability.
+  - For the **audio transcript length bonus** I chose to add up to a 20% favouring of the audio compatibility score weight, and to have this maximum percentage achieved for transcripts with 1500 or more words. I chose this because it equates to roughly 10 minutes of audio. This means the compatibility scores for longer conversations will be determined more by the metrics relating to the audio transcript, than avergae, and the opposite for shorter conversations, the idea being that you can gauge more about compatibility based on a longer conversation. **add a diagram?
 
 
 These unit tests could definitely use refining to encode more nauanced beliefs about compatability. My personal view on compatability is bound to be biased, and combining it with the view of others will lead to a much richer understanding of compatability, especially when combined with a more complex model that more adequately encodes these beliefs. To combine my views with others would be to discuss the subject of "what makes people compatible?" in depth, encorporating a wide range of peoples personal experiences to create a balanced perspective. Encorporating research on the topic will also give a more thorough understanding, and a more accurate model.
