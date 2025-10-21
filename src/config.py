@@ -12,8 +12,11 @@ HEURISTIC_WEIGHTS = {"openness": 0.17,
 # to compatability you get by listening to the audio
 HEURISTIC_PERSONALITY_WEIGHT = 0.8
 
-# This encodes how much of an impact the length of the audio should have on the audio vs physchometric weighting
-# i.e. longer audio tapes are more informative so should give audio more weighting
+# This encodes how much of an impact the length of the audio should have on the audio vs psychometric weighting
+# i.e. longer audio tapes are more informative so should give audio more weighting.
+# "weight" is the maximum penalty removed from the psychometric-based compatibility weighting
+# "max_cap" is the number of words in the transcript at which point all additional words don't increase audio-based weighting
+HEURISTIC_PERSONALITY_BONUS = {"weight": 0.2, "max_cap": 1500}
 
 HEURISTIC_TOPIC_WEIGHTS = {"topic_centring": 0.4,
                             "topic_stretch_factor": 1.8,

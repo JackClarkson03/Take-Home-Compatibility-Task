@@ -64,19 +64,22 @@ def _score_neuroticism(p1_score, p2_score):
     return max(0, min(1, friction_score - (clash_penalty * 0.25)))
 
 
-def _time_embedded_vector_weighting(personality_weight, word_count):
+def _time_embedded_vector_weighting(personality_weight, word_count, max_bonus, max_cap):
     '''
     Calculates the new psychometric vs. audio compatibility weighting
     based on the length of conversation.
     '''
-    word_count_bonus = -0.2
+    word_count_bonus = -max_bonus
 
-    if word_count <= 1500:
-        word_count_bonus = word_count / 7500 - 0.2
+    # Calculate the bonus line using the maximum bonus, and the point it is achieved
+    denom = (max_bonus * 2)/max_cap
+
+    if word_count <= max_cap:
+        word_count_bonus = word_count*denom - max_bonus
     else:
-        word_count_bonus = 0.2
+        word_count_bonus = max_cap
     
-    return np.clip(personality_weight + word_count_bonus, 0.0, 1.0)
+    return np.clip(personality_weight - word_count_bonus, 0.0, 1.0)
 
 
 
@@ -118,12 +121,12 @@ def calculate_heuristic_score(pers_vec_1: list[float], pers_vec_2: list[float], 
     
     word_count = analysis_results["word_count"]
     personality_weight = config.HEURISTIC_PERSONALITY_WEIGHT
-    p_weight = _time_embedded_vector_weighting(personality_weight, word_count)
-    
+    p_weight = _time_embedded_vector_weighting(personality_weight, word_count, config.HEURISTIC_PERSONALITY_BONUS["weight"], config.HEURISTIC_PERSONALITY_BONUS["max_cap"])
+
     final_score = sum(scores[key] * weights[key] for key in weights) * p_weight + scores_topic * (1-p_weight)
 
     explanation = (f"Final Score: {final_score:.2f}." 
-                   f"Topic Interest: {vec_interest:.2f}, Social Cue Bonus: {engagenent_adjustment + vadeder_engagement:.2f}, Length of Audio Bonus: {personality_weight - p_weight:.2f}. "
+                   f"Topic Interest: {vec_interest:.2f}, Social Cue Bonus: {engagenent_adjustment + vadeder_engagement:.2f}, Length of Audio Bonus: {2*(personality_weight - p_weight):.2f}. "
                    f"Trait Scores (0-1): Openness: {scores["openness"]:.2f}, Conscientiousness: {scores['conscientiousness']:.2f}, "
                    f"Extraversion: {scores['extraversion']:.2f}, Agreeableness: {scores['agreeableness']:.2f}, Neuroticosim: {scores['neuroticism']:.2f}.")
     return {"match_score": final_score, "explanation": explanation, "breakdown": scores}
