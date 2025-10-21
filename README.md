@@ -4,7 +4,31 @@ The goal of this project is to build a mini-pipeline for compatibility scoring b
 ## Live Demo and Usage
 ** Input information about how to run the project. What is the folder structure and what does each file do?
 
-Live URL - 
+Live URL - I made many attempts at getting the live demo link to work for my model, with no success. The available software online which automatically runs github repos was not successful, as my model requires API key inputs. With more time, I would have created an encrypted API key bank to automate this, but this is not feasible in the 48h window. Moreover, including an API key in the code is not possible as GitHub will delete any public repository containing an API key. I also attempted to bypass this issue using an azure Linux virtual machine, but this failed for other reasons. However, my model is easy to run locally using the following steps:
+
+- First download the Github repo: use the following command in windows powershell or linux after navigating (using ls and cd) to the folder you want to download it to:
+
+  - git clone https://github.com/JackClarkson03/Take-Home-Compatibility-Task.git
+
+- Then navigate into the Github repo folder and use the command:
+
+  - pip install -r requirements.txt
+ 
+- Head over to https://platform.openai.com/settings/organization/api-keys and press "Create a new secret key". Copy the API key, and then run the command:
+
+  - $env:OPENAI_API_KEY="this is where you insert your api key" (for powershell)
+  - export OPENAI_API_KEY="this is where you insert your api key" (for linux)
+ 
+ - Then run the command:
+
+   - uvicorn src.main:app --reload
+  
+ - Then copy and paste "http://127.0.0.1:8000/docs" into your browser. This should take you to a website that looks like this:
+
+   -<img width="1441" height="415" alt="image" src="https://github.com/user-attachments/assets/bf9e18c3-905f-4912-bbdf-1e05b9f52ad5" />
+
+- From this site, you press "Try it out" in the /transcribe section and then upload the .wav file and press "Execute" to transcribe the audio, and then "try it out", and replace the "string" text with this transcribed audio in the /summarise and /match sections to get the topic vectors and compatability scores.
+
 
 ## Architecture & Design Decisions
 This section justifies all architectural decision made about the pipeline. The first few steps are consistent for both the baseline compatibility model, and the matching heuristic model:
@@ -40,9 +64,9 @@ The Heuristic compatibility score works to resolve this problem, and gives a mor
 
 
 
-To encode this, I wrote unit tests which measured these beliefs. For different beliefs about compatability, or a different type of compatability being measure, similar unit tests could be deployed to allow these assumptions to be tested. The organisation of my model (unit tests in test_heuristics.py and weights in config.py) helps people encode their personal assumptions about compatability using the method of adjusting the unit tests to reflect their views, and then adjusting the model weights to pass these tests. For example, if the deployment task is to find romantic compatability, consciensiousness might rank higher since organised people will value that more in a partner, but not find it necessary in a casual conversation. Similarly, weights and score functions can be adjusted for your own personal preference if trying to find someone you're compatible with. For my specific assumptions, the final weightings were used to pass the tests:
+To encode this, I wrote unit tests which measured some of these beliefs (others make more sense to directly set). For different beliefs about compatability, or a different type of compatability being measure, similar unit tests could be deployed to allow these assumptions to be tested. The organisation of my model (unit tests in test_heuristics.py and weights in config.py) helps people encode their personal assumptions about compatability using the method of adjusting the unit tests to reflect their views, and then adjusting the model weights to pass these tests. For example, if the deployment task is to find romantic compatability, consciensiousness might rank higher since organised people will value that more in a partner, but not find it necessary in a casual conversation. Similarly, weights and score functions can be adjusted for your own personal preference if trying to find someone you're compatible with. For my specific assumptions, the final weightings were used to pass the tests:
 
-  - The **individual personality scores**
+  - The **individual personality score weightings** are as follows: Openness:..., Conscienciousness:..., Extraversion:..., Agreeableness:..., 
   - The **weighting of importance of different personality traits**
   - The **weightings of different audio-based metrics (topic interest, social cue (LLM) bonus, and vader sentiment bonuse)**
   This works by assuming a linear relationship between the word count and maximum possible bonus, and letting the user pick values for these. **what should I pick for the prior belief?
