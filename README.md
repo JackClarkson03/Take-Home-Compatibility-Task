@@ -1,5 +1,27 @@
 # Take-Home-Compatibility-Task
-Quantifying compatibility between users from audio files.
+The goal of this project is to build a mini-pipeline for compatibility scoring based on conversation audio and psychometrics. With the focus being on clear thinking, trade-offs and testable endpoints, the pipeline is relatively simple, with the focus being on justificaiton of choices, and the writeup.
+
+## Live Demo and Usage
+** Input information about how to run the project
+
+## Architecture & Design Decisions
+This section justifies all architectural decision made about the pipeline. The first few steps are consistent for both the baseline compatibility model, and the matching heuristic model:
+
+- Pre-Transcription (not implemented): ** describe this
+- Transcription: ** describe this
+- Topic Extraction: ** describe this
+
+The baseline compatibility score fuses the topic and personality information differently to how the matching heuristic model uses this information. The baseline works in the following way:
+
+- The model computes the topic personality vectors (the vectors outputted by the LLM when asked to quantify its association with the topics extracted from the model with respect to each of the personality traits). A weighted sum of each participant personality vector and the topic personality vector is used to create a profile of the participant in the context of the conversation. This is called the participants contextual personality vector (or weighted topic-personality vector). Cosine similarity is then used to measure how comparable the two participants contextual personality vectors are. The full architecture is seen below:
+<img width="2427" height="674" alt="baseline_model" src="https://github.com/user-attachments/assets/113a895f-0fdc-45dd-83e8-f10a777d5d72" />
+
+- The main decision require in this pipeline is in the choice of weights in the weighted sum of participant personality vectors and topic personality vectors. For this I chose to weight 70% towards the personality vector, and 30% towards the topic. This is due to the interpretation of the topic personality vector. The "personality traits" of a topic may impact peoples behaviour slightly, but they do not fundamentally change who they are. This weighting seems appropriate to capture the fact that in the 5-dimensional space representing the personality of the topic and participants, the nature of the topic slightly modifies a persons contexual personality, but their overall personality vector must remain the main source of thier nature.
+
+
+
+
+
 
 ## Project Approach
 My goal for this project is to build an end-to-end pipeline which produces a live, testable demo, in an intelligent and thoughtful way. Due to the tight time constraints of the project, I will first create a working pipeline, and then continue making improvements. After each model iteration, I will test each section on using the interaction demo, and use these results to determine what is included in the next iteration of the model. The full, detailed modifications of each iteration are explained below.
