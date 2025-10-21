@@ -17,7 +17,7 @@ The baseline compatibility score fuses the topic and personality information dif
 <img width="2427" height="674" alt="baseline_model" src="https://github.com/user-attachments/assets/113a895f-0fdc-45dd-83e8-f10a777d5d72" />
 
 - The main decision require in this pipeline is in the choice of weights in the weighted sum of participant personality vectors and topic personality vectors. For this I chose to weight 75% towards the personality vector, and 25% towards the topic. This is due to the interpretation of the topic personality vector. The "personality traits" of a topic may impact peoples behaviour slightly, but they do not fundamentally change who they are. This weighting seems appropriate to capture the fact that in the 5-dimensional space representing the personality of the topic and participants, the nature of the topic slightly modifies a persons contexual personality, but their overall personality vector must remain the main source of thier nature.
-- ** State the problem with the baseline model
+- ** State the problem with the baseline model (word)
 
 
 The Heuristic compatibility score works to resolve this problem, and gives a more naunced scoring system.
@@ -26,14 +26,11 @@ The Heuristic compatibility score works to resolve this problem, and gives a mor
 - ** Create pipeline diagram
 - There are several weighting parameters in config.py, each with an explainable meaning which allows for the incorporation of beliefs about the importance of different types of compatability. My approach to adjusting the final weights was to more clearly set out a definition of "compatability" in my head, write unit tests to check whether the model encorporated these beliefs, and then tweak the weights and the individual personality trait score functions accordingly until the model passes the test. This "compatability" definition is hard to atriculate, but I believe that ... (mention causual conversation compatability is the metric)... (move from word doc to here)
 
- - For both openness and conscientiousness, people with similar levels are more compatible, but given equal similarity, a pair with a higher average score are more compatible due to the positive association of these traits with general conversation.
- - For extraversion, complementarity is key. Pairs with a balanced scale tend to be more compatible. I don't beleive this trait has a significant impact on general compatability compared to some of the other traits.
- - I beleive high agreeableness is strongly preferred for surface-level compatability. Specifically, two participants with low agreeableness will generally not be compatible.
- - I see neuroticism as the opposite of agreeableness. Low neuroticism is strongly prefered for conversational compatability, and a pair with particularly high combined neuroticism will be particularly unlikely to be compatible.
- - For overall combinations of traits, I believe people with similar openness, conscientiousness, and agreeableness, complementary extraversion and low neuroticism should be a good match... what other combinations?
+ - Openness is generally positive for compatibility. A pair where both are high in openness is better than a pair where both are low in openness, but similar openness is better than a mixture. This is because shared curiosity or shared preference for routine leads to smoother conversatins, but high openness allows for an interest in a wider range of topics.
+ - Similairty in conscinetiousness is positive, but less critical than other traits. Very high differences can cause friction, but moderate differences are usually compatible for friendly conversation.
+ - Complementary is extraversion is positive. Two extreme extraverts are moderately compatible but there may be competition for speaking time. Pairs of introverts are least compatible due to difficulty in initiating and maintaining a conversation.
+ - Agreeableness is a positive trait for compatible casual conversation...
 
-
- - **Need to test how important similar topics are
 
 
 To encode this, I wrote unit tests which measured these beliefs. They can be found in test_heuristics.py. This lead to the final weighting:
