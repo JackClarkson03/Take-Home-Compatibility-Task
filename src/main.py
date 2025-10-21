@@ -69,6 +69,7 @@ async def match(request: schemas.TranscriptInput):
 
         # Extract topic vectors
         topics, topic_vec, engagement_score = pipeline.get_topics_and_vectors(request.text) # Use get_topics_and_vectors_mock() while the API calls are down
+        vader_compound_score = pipeline.get_vader_sentiment(request.text)
 
         # Fuse vectors
         fused_vec_1 = pipeline.fuse_vectors(USER_1_VEC, topic_vec)
@@ -79,7 +80,7 @@ async def match(request: schemas.TranscriptInput):
 
         # Calculate heuristic score
         analysis_results = {"topic_vector":topic_vec, "engagement_score": engagement_score}
-        heuristic = pipeline.heuristic_compatibility_score(USER_1_VEC, USER_2_VEC, analysis_results)
+        heuristic = pipeline.heuristic_compatibility_score(USER_1_VEC, USER_2_VEC, analysis_results, vader_compound_score)
 
         return {"baseline_score": baseline,
                 "heuristic_score": heuristic}

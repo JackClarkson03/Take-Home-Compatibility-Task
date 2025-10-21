@@ -9,8 +9,10 @@ from openai import OpenAI
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from transformers import pipeline as hf_pipeline
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from . import heuristics
+from . import config
 
 # Define Absolute Paths
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -51,8 +53,6 @@ def transcribe_audio(audio_path: str) -> str:
 
 
 
-
-
 # Extract Topics and get Vector Representation:
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
@@ -81,7 +81,7 @@ def get_topics_and_vectors(transcript: str):
     """
 
     try:
-        response = client.chat.completions.create(model = 'gpt-3.5-turbo-1106',
+        response = client.chat.completions.create(model = config.LLM_MODEL_NAME,
                                                   response_format = {"type": "json_object"},
                                                   messages = [{"role": "system", "content": "You are a helpful assistant that returns ONLY valid JSON."},
                                                               {"role": "user", "content": prompt}],
@@ -108,6 +108,13 @@ def get_topics_and_vectors(transcript: str):
         return ["blank topic"], [0.5] * 5, 0.0
     
 
+# Second Sentiment Analysis Source
+vader_analyzer = SentimentIntensityAnalyzer()
+
+def get_vader_sentiment(transcript: str) -> float:
+    scores = vader_analyzer.polarity_scores(transcript)
+    return scores['compound']
+
 
 # Mock function to handle OPENAI API quota exceeding
 def get_topics_and_vectors_mock(transcript: str):
@@ -129,7 +136,7 @@ def get_topics_and_vectors_mock(transcript: str):
 
 
 # Fuse Topic and Personality Vectors:
-def fuse_vectors(personality_vec: list[float], topic_vec: list[float], personality_weight: float = 0.7) -> np.ndarray:
+def fuse_vectors(personality_vec: list[float], topic_vec: list[float], personality_weight: float = config.FUSION_PERSONALITY_WEIGHT) -> np.ndarray:
     """
     Fuses the personality vector and topic vector using a weighted average.
     This fused vector represents a persons personality in the context of the specific conversation.
@@ -148,9 +155,9 @@ def fuse_vectors(personality_vec: list[float], topic_vec: list[float], personali
 
 
 # Heuristic Compatibility Score
-def heuristic_compatibility_score(pers_vec_1: list[float], pers_vec_2: list[float], analysis_results: dict) -> dict:
+def heuristic_compatibility_score(pers_vec_1: list[float], pers_vec_2: list[float], analysis_results: dict, vader_score: float) -> dict:
     '''
     Scores two users compatibility given their personality vectors, and the dictionary contianing topic vector and engagement.
     '''
 
-    return heuristics.calculate_heuristic_score(pers_vec_1, pers_vec_2, analysis_results)
+    return heuristics.calculate_heuristic_score(pers_vec_1, pers_vec_2, analysis_results, vader_score)
