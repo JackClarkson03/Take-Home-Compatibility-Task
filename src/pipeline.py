@@ -76,7 +76,7 @@ def get_topics_and_vectors(transcript: str):
 
     You MUST return ONLY a valid JSON object with four keys:
     1. "topics": A list of 5 topic strings.
-    2. "topic_vector": A list of 5 floats (0.0 - 1.0) representing the score for each personality trait in the given order.
+    2. "topic_vector": A list of 5 floats (0.00 - 1.00) representing the score for each personality trait in the given order.
     3. "engagement_score": A float (0.0 - 1.0).
     """
 

@@ -26,8 +26,9 @@ def _score_openness(p1_score, p2_score):
     """
     similarity = 1.0 - abs(p1_score - p2_score)
     avg_score = (p1_score + p2_score) / 2
+    weight = config.OPENNESS_SIMILARITY_WEIGHT
 
-    return (0.7 * similarity) + (0.3 * avg_score)
+    return (weight * similarity) + ((1-weight) * avg_score)
 
 
 def _score_conscientiousness(p1_score, p2_score):
@@ -36,15 +37,16 @@ def _score_conscientiousness(p1_score, p2_score):
     """
     similarity = 1.0 - abs(p1_score - p2_score)
     avg_score = (p1_score + p2_score) / 2
+    weight = config.CONSCIENTIOUSNESS_SIMILARITY_WEIGHT
 
-    return (0.7 * similarity) + (0.3 * avg_score)
+    return (weight * similarity) + ((1-weight) * avg_score)
 
 
 def _score_extraversion(p1_score, p2_score):
     """
-    Complementary extraversion scores are preferred.
+    Complementary extraversion scores are preferred. Ambiverts also pair well together.
     """
-    return abs(p1_score - p2_score)
+    return 1 - abs((p1_score + p2_score) - 1)
 
 
 def _score_agreeableness(p1_score, p2_score):
