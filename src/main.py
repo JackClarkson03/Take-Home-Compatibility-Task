@@ -78,9 +78,12 @@ async def match(request: schemas.TranscriptInput):
         # Calculate baseline score
         baseline = heuristics.baseline_compatibility_score(fused_vec_1, fused_vec_2)
 
+        # Calculate transcript length
+        word_count = len(request.text.split())
+
         # Calculate heuristic score
-        analysis_results = {"topic_vector":topic_vec, "engagement_score": engagement_score}
-        heuristic = pipeline.heuristic_compatibility_score(USER_1_VEC, USER_2_VEC, analysis_results, vader_compound_score)
+        analysis_results = {"topic_vector":topic_vec, "engagement_score": engagement_score, "vader_engagement": vader_compound_score, "word_count": word_count}
+        heuristic = pipeline.heuristic_compatibility_score(USER_1_VEC, USER_2_VEC, analysis_results)
 
         return {"baseline_score": baseline,
                 "heuristic_score": heuristic}

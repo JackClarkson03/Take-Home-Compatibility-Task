@@ -72,20 +72,22 @@ class TestHeuristicFunctions(unittest.TestCase):
 
         self.mock_analysis_results = {
             "topic_vector": [0.9, 0.7, 0.3, 0.4, 0.6],
-            "engagement_score": 0.75}
+            "engagement_score": 0.75,
+            "vader_engagement": 0.0,
+            "word_count": 750}
 
     def test_ideal_match_score_is_high(self):
-        result = calculate_heuristic_score(self.persona_ideal_match_1, self.persona_ideal_match_2, self.mock_analysis_results, 0.0)
+        result = calculate_heuristic_score(self.persona_ideal_match_1, self.persona_ideal_match_2, self.mock_analysis_results)
         self.assertGreater(result["match_score"], 0.7, "Ideal match score should be high")
         print(f"\nIdeal Match Score: {result['match_score']:.2f}")
 
     def test_volatile_clash_score_is_low(self):
-        result = calculate_heuristic_score(self.persona_volatile_clash, self.persona_volatile_clash, self.mock_analysis_results, 0.0)
+        result = calculate_heuristic_score(self.persona_volatile_clash, self.persona_volatile_clash, self.mock_analysis_results)
         self.assertLess(result["match_score"], 0.4, "Volatile clash score should be low")
         print(f"Volatile Clash Score: {result['match_score']:.2f}")
 
     def test_argumentative_clash_score_is_low(self):
-        result = calculate_heuristic_score(self.persona_argumentative, self.persona_argumentative, self.mock_analysis_results, 0.0)
+        result = calculate_heuristic_score(self.persona_argumentative, self.persona_argumentative, self.mock_analysis_results)
         self.assertLess(result["match_score"], 0.5, "Argumentative clash score should be low/mid")
         print(f"Argumentative Clash Score: {result['match_score']:.2f}")
 

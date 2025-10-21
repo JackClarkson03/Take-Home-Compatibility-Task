@@ -2,7 +2,6 @@
 
 # Import Libraries
 import whisper
-from keybert import KeyBERT
 import json
 import os
 from openai import OpenAI
@@ -48,6 +47,7 @@ model = whisper.load_model("base", download_root=model_cache_dir)
 
 
 def transcribe_audio(audio_path: str) -> str:
+
     result = model.transcribe(audio_path)
     return result["text"]
 
@@ -155,9 +155,9 @@ def fuse_vectors(personality_vec: list[float], topic_vec: list[float], personali
 
 
 # Heuristic Compatibility Score
-def heuristic_compatibility_score(pers_vec_1: list[float], pers_vec_2: list[float], analysis_results: dict, vader_score: float) -> dict:
+def heuristic_compatibility_score(pers_vec_1: list[float], pers_vec_2: list[float], analysis_results: dict) -> dict:
     '''
     Scores two users compatibility given their personality vectors, and the dictionary contianing topic vector and engagement.
     '''
 
-    return heuristics.calculate_heuristic_score(pers_vec_1, pers_vec_2, analysis_results, vader_score)
+    return heuristics.calculate_heuristic_score(pers_vec_1, pers_vec_2, analysis_results)

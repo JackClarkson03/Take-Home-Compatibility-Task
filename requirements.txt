@@ -3,9 +3,8 @@ uvicorn[standard]
 python-multipart
 openai
 whisper-openai
-keybert
 scikit-learn
-numpy
+numpy==1.26.4
 scipy
 transformers
 vaderSentiment
