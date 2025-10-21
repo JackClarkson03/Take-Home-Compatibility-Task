@@ -73,10 +73,23 @@ My Third iteration will make the following changes:
 
   The change made from my second to third interation of model is to understand how engaged participants in the conversation are from looking at the transcript. This helps give a more well rounded view of the interest of the participants in the topic, and therefore the compatibility of the participants. With more time for the project, participant engaement could be derived directly from the audio file in order to gauge the participants vocal reflections of their interest. Furthmore, speech diarisation would be helpful here. The topic vector approach to participant interest is usful because it gives separate interest scores for each participant, with the interest score being recorded as the minimum of these two to ensure a high interest score means both participants are interested in the conversation. A similar thing could be done from the audio file with speech diarisation.
 
-
-  The next steps of this project will be to thoroughly test the results on artificial data and determine the next logical improvements to make given the limited time.
 </details>
 
+
+
+
+<details>
+  <summary>Fourth Model Interation: Enhanced Explainability, Additional Sentiment Analysis, and Unit Tests</summary>
+
+The Fourth iteration added a few small, but important changes to improve the overall quality of the code and ease of implementation:
+
+- First, it added enhanced heuristic explainability and robustness, outputting the full score breakdown when testing compatibility.
+- Secondly, configuration management was added for ease of weight adjustment and improved control.
+- Thirdly, a second source of sentiment analysis was added in the form of VaderSentiment, an easy-to-use library which is used to analyse the engagement of participants from the given transcript. This was done to reduce the dependency on the LLM-quantified engagement source, making this more robust.
+- Finally, a series of API and heuristic score tests were added. This will make the final rewieghting of importance of different personality traits easier to do, and I can tweak the weights in config.py, and then run the unit tests and check whether they pass.
+
+Overall, no major changes were added, but the quality of life when running the code has greatly improved, which is equally as important as changing the actual model.
+</details>
 
 
 
