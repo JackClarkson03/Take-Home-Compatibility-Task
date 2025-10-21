@@ -4,6 +4,8 @@ The goal of this project is to build a mini-pipeline for compatibility scoring b
 ## Live Demo and Usage
 ** Input information about how to run the project. What is the folder structure and what does each file do?
 
+Live URL - 
+
 ## Architecture & Design Decisions
 This section justifies all architectural decision made about the pipeline. The first few steps are consistent for both the baseline compatibility model, and the matching heuristic model:
 
@@ -24,21 +26,26 @@ The Heuristic compatibility score works to resolve this problem, and gives a mor
 
 - ** Explain how it works
 - ** Create pipeline diagram
-- There are several weighting parameters in config.py, each with an explainable meaning which allows for the incorporation of beliefs about the importance of different types of compatability. My approach to adjusting the final weights was to more clearly set out a definition of "compatability" in my head, write unit tests to check whether the model encorporated these beliefs, and then tweak the weights and the individual personality trait score functions accordingly until the model passes the test. This "compatability" definition is hard to atriculate, but I believe that ... (mention causual conversation compatability is the metric)... (move from word doc to here)
+- There are several weighting parameters in config.py, each with an explainable meaning which allows for the incorporation of beliefs about the importance of different types of compatability. My approach to adjusting the final weights was to more clearly set out a definition of "compatability" in my head, write unit tests to check whether the model encorporated these beliefs, and then tweak the weights and the individual personality trait score functions accordingly until the model passes the test. This "compatability" definition is hard to atriculate, but I believe that ... (mention causual conversation compatability is the metric)...
 
  - Openness is generally positive for compatibility. A pair where both are high in openness is better than a pair where both are low in openness, but similar openness is better than a mixture. This is because shared curiosity or shared preference for routine leads to smoother conversatins, but high openness allows for an interest in a wider range of topics.
  - Similairty in conscinetiousness is positive, but less critical than other traits. Very high differences can cause friction, but moderate differences are usually compatible for friendly conversation.
  - Complementary is extraversion is positive. Two extreme extraverts are moderately compatible but there may be competition for speaking time. Pairs of introverts are least compatible due to difficulty in initiating and maintaining a conversation.
- - Agreeableness is a positive trait for compatible casual conversation...
+ - Agreeableness is a positive trait for casual conversation and is a strong predictor of compatability. Pairs where both are high on agreeableness are most compatable, followed by a mixture of agreeableness.
+ - Neuroticism is a negative trait that inversely predicts compatability. Pairs where both are high are least compatabile due to potential for negativity spirals.
+ - For trait importance, agreeableness and low neuroticism are the most important traits, followed by complementary extraversion, with openess and conscientiousness ranking least important. This is because a conversations pleasantness and flow are heavily influenced by how cooperative and emotionally stable the participatns are. Having a balance of talking and listening helps maintain engagement, and shared curiosity or conscientiousness are generally not as important.
+ - Dynamic audio-based metrics provide important context about the compatability, but the pscyhometrics traits are what forms the foundation of compatability.
+ - As the conversation length increases, the importance of the general audio-based metrics should increase. Longer conversations provide more context in determining whether people are compatible, and a high engagement score over a long conversation should outweight initial baseline compatability determined by scores across five personality trait metrics.
+ - Across the audio-based metrics, the engagement score is most important, followed by the topic interest. The VADER sentiment ranks lowest, and is more of a backup to prevent fully relying on an LLM for engagement scores. Whether people seem engaged in the conversation is a very strong metric of how compatible they are in casual conversation.
 
 
 
-To encode this, I wrote unit tests which measured these beliefs. They can be found in test_heuristics.py. This lead to the final weighting:
+To encode this, I wrote unit tests which measured these beliefs. For different beliefs about compatability, or a different type of compatability being measure, similar unit tests could be deployed to allow these assumptions to be tested. The organisation of my model (unit tests in test_heuristics.py and weights in config.py) helps people encode their personal assumptions about compatability using the method of adjusting the unit tests to reflect their views, and then adjusting the model weights to pass these tests. For example, if the deployment task is to find romantic compatability, consciensiousness might rank higher since organised people will value that more in a partner, but not find it necessary in a casual conversation. Similarly, weights and score functions can be adjusted for your own personal preference if trying to find someone you're compatible with. For my specific assumptions, the final weightings were used to pass the tests:
 
   - The **individual personality scores**
   - The **weighting of importance of different personality traits**
-  - The **weightings of different audio-based bonuses (social cue (LLM) bonus, and vader sentiment bonuse)**
-  - Another weighting decision to be made is about the **weighting between the psychometric-based and audio-based compatibility scores** in the overall heuristic compatibility score. My model allows you to encode your prior belief about whether psychometrics or the audio conversation is more important for determining compatibility, as well as allowing you to increase the weighting in favour of the audio compatibilty scores for longer audio transcripts. This works by assuming a linear relationship between the word count and maximum possible bonus, and letting the user pick values for these. **what should I pick for the prior belief?
+  - The **weightings of different audio-based metrics (topic interest, social cue (LLM) bonus, and vader sentiment bonuse)**
+  This works by assuming a linear relationship between the word count and maximum possible bonus, and letting the user pick values for these. **what should I pick for the prior belief?
   - For the **audio transcript length bonus**, I chose to add up to a 20% favouring of the audio compatibility score weight, and to have this maximum percentage achieved for transcripts with 1500 or more words. I chose this because it equates to roughly 10 minutes of audio. ** Is this long enough? This means the compatibility scores for longer conversations will be determined more by the metrics relating to the audio transcript, than avergae, and the opposite for shorter conversations, the idea being that you can gauge more about compatibility based on a longer conversation. **add a diagram?
 
 
@@ -138,7 +145,7 @@ The Fourth iteration added a few small, but important changes to improve the ove
 
 ## Future Steps
 ** How I would approach this differently in a deployment setting? What the next steps I would take are in developing a similar model full time.
-
+Focus on the larger scale idea and how we can measure compatibility with more data.
 
 
 
