@@ -72,8 +72,7 @@ The Heuristic compatibility score works to resolve this problem, and gives a mor
 - The heuristic compatibility model implements a more advanced scoring system, based on a more nauanced definition of "compatability", using audio-based (measuring how compatible participants are based on evidence from the audio file) and psychometric-based (measureing how compatbile participants are based on psychometric scores) scoring systems. It is built on a set of specific beliefs about how different personality traits interact in conversatino, and is designed to be explainable, tunable, and aligned with a philosophical view.
 - Three audio-based scores are used. Firstly, there is a measure of interest in the conversation based on topics discussed. After the transcrip is embedded into vectors in the same way as the base model, a scaled Euclidean similairty metric is used to score each persons personality vector to the topic vector. This assumes that people with certain personality traits prefer topics that align with these traits. The minimum of these two participants scores is used as a proxy for general interest in the conversation, and thus general compatability of participants. Secondly, the LLM-generated engagement score is used as a compatability score, as more engaged participants are likely to be more compatible. Thirdly, a VADER sentiment analysis model is used to reduce dependence on LLMs.
 - The psychometric based scores are used in a custom scoring function that reflect the personal philosophy of the model user. Each individual personality trait can be scored by a different metric and weighed according to different levels of importance. For my particular functions, some are designed to reflect globally high traits, some are designed to reward complementary traits, and some are designed with a preference for similairty. The exact logic is discussed later, and can be see in heuristics.py and config.py.
-- **what are its advantages over baseline?
-- ** Create pipeline diagram
+  <img width="2439" height="1296" alt="heuristic_model" src="https://github.com/user-attachments/assets/7f3be488-67f4-47dd-8a4a-aa88b65f8d2f" />
 - There are several weighting parameters in config.py, each with an explainable meaning which allows for the incorporation of beliefs about the importance of different types of compatability. My approach to adjusting the final weights was to more more rigourously define "compatability", write unit tests to check whether the model encorporated these beliefs about compatability, and then tweak the weights and the individual personality trait score functions accordingly until the model passes the test. General "compatability" is hard to define, but in the interest of narrowing the scope, and due to the nature of the conversation data given for this project, I will aim to define casual conversation compatability. That is, the potential for participants to achieve conversational flow, characterised by mutual ease, positive emotional tenor and sustained engagement. With relation to the personality traits provided, this can be summed up as follows.
 
  - Openness is generally positive for compatibility. A pair where both are high in openness is better than a pair where both are low in openness, but similar openness is better than a mixture. This is because shared curiosity or shared preference for routine leads to smoother conversatins, but high openness allows for an interest in a wider range of topics.
@@ -97,6 +96,9 @@ To encode this, I wrote unit tests which measured some of these beliefs (others 
 
 
 These unit tests could definitely use refining to encode more nauanced beliefs about compatability. My personal view on compatability is bound to be biased, and combining it with the view of others will lead to a much richer understanding of compatability, especially when combined with a more complex model that more adequately encodes these beliefs. To combine my views with others would be to discuss the subject of "what makes people compatible?" in depth, encorporating a wide range of peoples personal experiences to create a balanced perspective. Encorporating research on the topic will also give a more thorough understanding, and a more accurate model.
+
+
+There are many advantages of the heuristic approach over the baseline. Firstly the trait-specific functions encode that not all traits are created equal. The separate personality trait scores reflects personal philosophies on these traits, stated earlier. It also provides dynamic contextual weightings. The standard topic interest score is boosted by a score dependent on the LLMs interpretation of engagement in the conversation, reflecting the belief that social cues in how people talk are often more important than what they talk about. The conversational length bonus also encodes the belief that the more data we have from a real interaction, the less we should rely on abstract personality profiles. A long, engaging conversation between a theoretically incompatible pair provides strong evidence that they are compatible in practice. Similarly, a long, angry conversation with negative social cues between to theoretically compatible people provides evidence of the opposite. The heuristic model is also far more flexible than the baseline model, due to the config.py file.
 
 
 
@@ -194,11 +196,10 @@ The Fourth iteration added a few small, but important changes to improve the ove
 
 
 ## Model Limitations & Trade-offs
-** Discuss explicit trade-offs in detail.
+** Achknowlegde the pragmatic shortcuts and inherent constraints of the current design. Show self awareness and strong engineering sense. Acknoweledge the subjective heuristic approach: I traded a more objective black box model for a fully tansparent, explainable and tunable expert system. This was a choice to meet project requirements. LLM reliability: project hinges on since API call. Tradeoff is performance and cost efficiency, avoiding complexity and chained API calls. mitigated using try-except. Current implementation runs entire pipelin wthin a single requrest: not suitable for high traffic. Design choice for simplicity and rapid devleopment appropriate for 48h task. Focus was not on scalable production-grade infrastructure.
 
 ## Future Steps
-** How I would approach this differently in a deployment setting? What the next steps I would take are in developing a similar model full time.
-Focus on the larger scale idea and how we can measure compatibility with more data.
+** propose concrete technical improvements. Speaker diarisation for individual engagement scores far more powerful. Use empirical data for heuristics, refactor pipeline.
 
 
 
